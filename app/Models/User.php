@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -42,4 +43,19 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function isDev()
+    {
+        return $this->role === 'dev';
+    }
+
+    public function isGerente()
+    {
+        return $this->role === 'gerente';
+    }
+
+    public function isColaborador()
+    {
+        return $this->role === 'colaborador';
+    }
 }

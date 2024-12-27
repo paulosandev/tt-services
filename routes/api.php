@@ -8,7 +8,8 @@ use App\Http\Controllers\AreaController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SupplierController;
-    
+use App\Http\Controllers\UserController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -25,11 +26,22 @@ use App\Http\Controllers\SupplierController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+Route::middleware('auth:sanctum')->get('/user', [UserController::class, 'show']);
+Route::middleware('auth:sanctum')->put('/user', [UserController::class, 'update']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'role:dev,gerente'])->group(function () {
     Route::apiResource('articles', ArticleController::class);
     Route::apiResource('areas', AreaController::class);
     Route::apiResource('brands', BrandController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('suppliers', SupplierController::class);
+});
+
+Route::middleware(['auth:sanctum', 'role:dev,gerente,colaborador'])->group(function () {
+    Route::put('articles/{article}', [ArticleController::class, 'update']);
+    Route::get('articles', [ArticleController::class, 'index']);
+    Route::get('areas', [AreaController::class, 'index']);
+    Route::get('brands', [BrandController::class, 'index']);
+    Route::get('categories', [CategoryController::class, 'index']);
+    Route::get('suppliers', [SupplierController::class, 'index']);
 });

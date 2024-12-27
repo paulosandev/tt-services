@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ArticleController extends Controller
 {
@@ -14,6 +15,10 @@ class ArticleController extends Controller
 
     public function store(Request $request)
     {
+        if (!Auth::user()->isDev() && !Auth::user()->isGerente()) {
+            return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'area_id' => 'required|exists:areas,id',
@@ -46,6 +51,10 @@ class ArticleController extends Controller
 
     public function update(Request $request, Article $article)
     {
+        if (!Auth::user()->isDev() && !Auth::user()->isGerente() && !Auth::user()->isColaborador()) {
+            return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'area_id' => 'sometimes|exists:areas,id',
@@ -63,6 +72,12 @@ class ArticleController extends Controller
             'exists' => 'El valor de :attribute no es válido.',
         ]);
 
+        if (Auth::user()->isColaborador()) {
+            $article->update(['stock' => $validated['stock']]);
+        } else {
+            $article->update($validated);
+        }
+
         if (isset($validated['stock']) && isset($validated['min_stock'])) {
             $validated['status'] = $validated['stock'] >= $validated['min_stock'] ? 'Suficiente' : 'Escaso';
         }
@@ -77,6 +92,10 @@ class ArticleController extends Controller
 
     public function destroy(Article $article)
     {
+        if (!Auth::user()->isDev() && !Auth::user()->isGerente()) {
+            return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
+        }
+        
         $article->delete();
 
         return response()->json(['message' => 'Artículo eliminado']);
