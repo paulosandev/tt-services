@@ -10,12 +10,14 @@ class ArticleController extends Controller
 {
     public function index()
     {
-        return response()->json(Article::with(['area', 'brand', 'category', 'supplier'])->get());
+        return response()->json(
+            Article::with(['area', 'brand', 'category', 'supplier'])->get()
+        );
     }
 
     public function store(Request $request)
     {
-        if (!Auth::user()->isDev() && !Auth::user()->isGerente()) {
+        if (!Auth::user()->isDev() && !Auth::user()->isGerente() && !Auth::user()->isColaborador()) {
             return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
         }
 
@@ -38,7 +40,9 @@ class ArticleController extends Controller
 
         $validated['is_ordered'] = $validated['is_ordered'] ?? false;
         if (isset($validated['stock']) && isset($validated['min_stock'])) {
-            $validated['status'] = $validated['stock'] >= $validated['min_stock'] ? 'Suficiente' : 'Escaso';
+            $validated['status'] = $validated['stock'] >= $validated['min_stock']
+                ? 'Suficiente'
+                : 'Escaso';
         }
 
         $article = Article::create($validated);
@@ -72,6 +76,7 @@ class ArticleController extends Controller
             'exists' => 'El valor de :attribute no es válido.',
         ]);
 
+        // Los colaboradores solo pueden editar stock (y is_ordered si así lo deseas)
         if (Auth::user()->isColaborador()) {
             $article->update(['stock' => $validated['stock']]);
         } else {
@@ -79,7 +84,9 @@ class ArticleController extends Controller
         }
 
         if (isset($validated['stock']) && isset($validated['min_stock'])) {
-            $validated['status'] = $validated['stock'] >= $validated['min_stock'] ? 'Suficiente' : 'Escaso';
+            $validated['status'] = $validated['stock'] >= $validated['min_stock']
+                ? 'Suficiente'
+                : 'Escaso';
         }
 
         $article->update($validated);
@@ -95,7 +102,7 @@ class ArticleController extends Controller
         if (!Auth::user()->isDev() && !Auth::user()->isGerente()) {
             return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
         }
-        
+
         $article->delete();
 
         return response()->json(['message' => 'Artículo eliminado']);

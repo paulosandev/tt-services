@@ -8,38 +8,41 @@ use App\Http\Controllers\AreaController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
-
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
+| Aquí se registran las rutas para tu API.
 |
 */
 
-
+// Rutas de autenticación
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// Ruta para subir imágenes a Cloudinary
+
+// Rutas protegidas por Sanctum
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 Route::middleware('auth:sanctum')->get('/user', [UserController::class, 'show']);
 Route::middleware('auth:sanctum')->put('/user', [UserController::class, 'update']);
 
+// Rutas para usuarios dev y gerente (crear/borrar artículos, etc.)
 Route::middleware(['auth:sanctum', 'role:dev,gerente'])->group(function () {
-    Route::apiResource('articles', ArticleController::class);
     Route::apiResource('areas', AreaController::class);
     Route::apiResource('brands', BrandController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('suppliers', SupplierController::class);
 });
 
+// Rutas para dev, gerente y colaborador (actualizar stock, leer artículos, etc.)
 Route::middleware(['auth:sanctum', 'role:dev,gerente,colaborador'])->group(function () {
-    Route::put('articles/{article}', [ArticleController::class, 'update']);
-    Route::get('articles', [ArticleController::class, 'index']);
+    Route::apiResource('articles', ArticleController::class);
+    Route::post('/upload', [UploadController::class, 'uploadImage']);
     Route::get('areas', [AreaController::class, 'index']);
     Route::get('brands', [BrandController::class, 'index']);
     Route::get('categories', [CategoryController::class, 'index']);
