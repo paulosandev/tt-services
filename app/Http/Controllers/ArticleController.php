@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ArticlesImport;
 
 class ArticleController extends Controller
 {
@@ -157,5 +159,39 @@ class ArticleController extends Controller
         $article->delete();
 
         return response()->json(['message' => 'Artículo eliminado']);
+    }
+
+    public function import(Request $request)
+    {
+        // Verificar permisos
+        if (!Auth::user()->isDev() && !Auth::user()->isGerente() && !Auth::user()->isColaborador()) {
+            return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
+        }
+
+        // Validar el archivo
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ], [
+            'file.required' => 'El archivo es obligatorio.',
+            'file.mimes' => 'El archivo debe ser un tipo de archivo: xlsx, xls, csv.',
+            'file.max' => 'El archivo no debe exceder los 2MB.',
+        ]);
+
+        try {
+            $import = new ArticlesImport;
+            Excel::import($import, $request->file('file'));
+
+            // Manejar errores de validación
+            if ($import->failures()->isNotEmpty()) {
+                return response()->json([
+                    'message' => 'Algunos registros no se pudieron importar.',
+                    'failures' => $import->failures(),
+                ], 422);
+            }
+
+            return response()->json(['message' => 'Artículos importados exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al importar el archivo.', 'error' => $e->getMessage()], 500);
+        }
     }
 }

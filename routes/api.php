@@ -47,4 +47,7 @@ Route::middleware(['auth:sanctum', 'role:dev,gerente,colaborador'])->group(funct
     Route::get('brands', [BrandController::class, 'index']);
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('suppliers', [SupplierController::class, 'index']);
+
+    // Ruta para importar artículos desde Excel
+    Route::post('/articles/import', [ArticleController::class, 'import']);
 });

@@ -11,20 +11,29 @@ class UploadController extends Controller
     {
         // Validar que venga un archivo de imagen
         $request->validate([
-            'image' => 'required|image|mimes:jpg,jpeg,png,gif,svg,webp|max:4096'
+            'image' => 'required|file|mimes:jpg,jpeg,png,gif,svg,webp,heic|max:4096'
         ]);
 
-        // Subir directamente a Cloudinary
-        $uploadedFileUrl = cloudinary()->upload(
-            $request->file('image')->getRealPath(),
-            [
-                'folder' => 'tochpan_articles', // Opcional: carpeta en Cloudinary
-            ]
-        )->getSecurePath();
+        try {
+            // Subir directamente a Cloudinary con la transformación a JPG
+            $uploadedFileUrl = cloudinary()->upload(
+                $request->file('image')->getRealPath(),
+                [
+                    'folder' => 'tochpan_articles', // Carpeta opcional en Cloudinary
+                    'format' => 'jpg',             // Forzar a JPG en Cloudinary
+                    'resource_type' => 'image',
+                ]
+            )->getSecurePath();
 
-        // Devolver la URL de la imagen recién subida
-        return response()->json([
-            'url' => $uploadedFileUrl
-        ], 200);
+            // Devolver la URL de la imagen recién subida
+            return response()->json([
+                'url' => $uploadedFileUrl
+            ], 200);
+        } catch (\Exception $e) {
+            // Manejo de errores
+            return response()->json([
+                'error' => 'Error al subir la imagen: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
