@@ -51,3 +51,43 @@ Route::middleware(['auth:sanctum', 'role:dev,gerente,colaborador'])->group(funct
     // Ruta para importar artículos desde Excel
     Route::post('/articles/import', [ArticleController::class, 'import']);
 });
+
+Route::post('/user-info', function (Request $request) {
+    // Obtener los parámetros del cuerpo de la solicitud
+    $args = $request->input('args');
+
+    // Validar que el parámetro 'id' esté presente
+    if (!isset($args['id'])) {
+        return response()->json(['error' => 'User ID parameter is required'], 400);
+    }
+
+    // Hardcodeamos la información de varios usuarios
+    $users = [
+        1 => [
+            'name' => 'Paulo Sanchez',
+            'email' => 'paulosanchez@example.com',
+            'phone' => '2711639363 ',
+        ],
+        2 => [
+            'name' => 'Jane Smith',
+            'email' => 'jane.smith@example.com',
+            'phone' => '+0987654321',
+        ],
+        3 => [
+            'name' => 'Alice Johnson',
+            'email' => 'alice.johnson@example.com',
+            'phone' => '+1122334455',
+        ],
+    ];
+
+    // Obtener el ID del usuario
+    $userId = $args['id'];
+
+    // Verificar si el usuario existe
+    if (!array_key_exists($userId, $users)) {
+        return response()->json(['error' => 'User not found'], 404);
+    }
+
+    // Devolver la información del usuario
+    return response()->json($users[$userId]);
+});
