@@ -65,20 +65,19 @@ class ArticleController extends Controller
         // Aseguramos que is_ordered tenga un valor
         $validated['is_ordered'] = $validated['is_ordered'] ?? false;
 
-        // Cálculo de estatus según las reglas:
-        //  - >= min_stock => Suficiente
-        //  - < min_stock pero >= 50% => Escaso
-        //  - Menor que 50% => Agotado
-        if (isset($validated['stock']) && isset($validated['min_stock'])) {
+        // Cálculo de estatus según las reglas del frontend:
+        if ($validated['is_ordered']) {
+            $validated['status'] = 'Pedido';
+        } else {
             $stock = $validated['stock'];
             $min   = $validated['min_stock'];
 
-            if ($stock >= $min) {
-                $validated['status'] = 'Suficiente';
-            } elseif ($stock >= 0.5 * $min) {
+            if ($stock <= $min) {
+                $validated['status'] = 'Para pedir';
+            } elseif ($stock < $min * 1.2) {
                 $validated['status'] = 'Escaso';
             } else {
-                $validated['status'] = 'Agotado';
+                $validated['status'] = 'Suficiente';
             }
         }
 
@@ -97,8 +96,6 @@ class ArticleController extends Controller
 
     public function update(Request $request, Article $article)
     {
-        // Antes: if (!Auth::user()->isDev() && ...)
-        // Mantenemos la verificación para saber si es dev, gerente o colaborador
         if (!Auth::user()->isDev() && !Auth::user()->isGerente() && !Auth::user()->isColaborador()) {
             return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
         }
@@ -121,20 +118,24 @@ class ArticleController extends Controller
             'exists'  => 'El valor de :attribute no es válido.',
         ]);
 
-        // Como ahora el colaborador también puede editar todo, ya no restringimos
+        // Actualizar el artículo
         $article->update($validated);
 
-        // Recalcular status si se envían stock y min_stock
-        if (isset($validated['stock']) && isset($validated['min_stock'])) {
-            $stock = $validated['stock'];
-            $min   = $validated['min_stock'];
-
-            if ($stock >= $min) {
-                $article->status = 'Suficiente';
-            } elseif ($stock >= 0.5 * $min) {
-                $article->status = 'Escaso';
+        // Recalcular status si se envían stock y min_stock o is_ordered
+        if (isset($validated['is_ordered']) || (isset($validated['stock']) && isset($validated['min_stock']))) {
+            if ($article->is_ordered) {
+                $article->status = 'Pedido';
             } else {
-                $article->status = 'Agotado';
+                $stock = $validated['stock'] ?? $article->stock;
+                $min   = $validated['min_stock'] ?? $article->min_stock;
+
+                if ($stock <= $min) {
+                    $article->status = 'Para pedir';
+                } elseif ($stock < $min * 1.2) {
+                    $article->status = 'Escaso';
+                } else {
+                    $article->status = 'Suficiente';
+                }
             }
             $article->save();
         }

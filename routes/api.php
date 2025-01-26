@@ -10,7 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
-
+use App\Models\Article;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -19,6 +19,34 @@ use App\Http\Controllers\UserController;
 | Aquí se registran las rutas para tu API.
 |
 */
+
+Route::get('/recalculate-status', function () {
+    // Recorrer todos los artículos
+    Article::chunk(100, function ($articles) {
+        foreach ($articles as $article) {
+            // Calcular el nuevo estatus
+            if ($article->is_ordered) {
+                $article->status = 'Pedido';
+            } else {
+                $stock = $article->stock;
+                $minStock = $article->min_stock;
+
+                if ($stock <= $minStock) {
+                    $article->status = 'Para pedir';
+                } elseif ($stock < $minStock * 1.2) {
+                    $article->status = 'Escaso';
+                } else {
+                    $article->status = 'Suficiente';
+                }
+            }
+
+            // Guardar el artículo con el nuevo estatus
+            $article->save();
+        }
+    });
+
+    return 'Estatus recalculados exitosamente.';
+});
 
 // Rutas de autenticación
 Route::post('/register', [AuthController::class, 'register']);
