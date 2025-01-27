@@ -85,8 +85,8 @@ Route::post('/user-info', function (Request $request) {
     $args = $request->input('args');
 
     // Validar que el parámetro 'id' esté presente
-    if (!isset($args['id'])) {
-        return response()->json(['error' => 'User ID parameter is required'], 400);
+    if (!isset($args['matricula'])) {
+        return response()->json(['error' => 'User matricula parameter is required'], 400);
     }
 
     // Hardcodeamos la información de varios usuarios
@@ -109,7 +109,7 @@ Route::post('/user-info', function (Request $request) {
     ];
 
     // Obtener el ID del usuario
-    $userId = $args['id'];
+    $userId = $args['matricula'];
 
     // Verificar si el usuario existe
     if (!array_key_exists($userId, $users)) {
